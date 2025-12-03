@@ -67,3 +67,46 @@ let realPassword =
     |> countZeros
 
 printfn "The real password is %d" realPassword
+
+let applyInstruction2 (position: int) instruction =
+    let increment =
+        match instruction.Direction with
+        | Left -> - instruction.Steps
+        | Right -> instruction.Steps
+    let newPosition = position + increment
+
+    let modulo = newPosition % dialSize
+    if newPosition = 0 then 
+        {| NewPosition = modulo; Zeros = 1 |}
+    elif newPosition < 0 then 
+        if position = 0 then
+            {| NewPosition = modulo + dialSize; Zeros = abs (newPosition / dialSize) |}
+        else
+            {| NewPosition = modulo + dialSize; Zeros = 1 + abs (newPosition / dialSize) |}
+    else 
+        {| NewPosition = modulo; Zeros = newPosition / dialSize |}
+
+let countZeroCrossings (applications : {| NewPosition : int; Zeros : int|} list) =
+    applications
+    |> List.sumBy (fun x -> x.Zeros)
+
+let applyInstructions2 start instructions =
+    ( {| NewPosition = start; Zeros = 0 |}, instructions)
+    ||> List.scan (fun acc instr -> applyInstruction2 acc.NewPosition instr)
+
+test <@ 
+    6 = (
+        testData 
+        |> List.map parseInstruction 
+        |> applyInstructions2 50
+        |> countZeroCrossings
+        )
+    @>
+
+let realPassword2 =
+    realData
+    |> List.map parseInstruction 
+    |> applyInstructions2 50
+    |> countZeroCrossings
+
+printfn "The real password for part 2 is %d" realPassword2
