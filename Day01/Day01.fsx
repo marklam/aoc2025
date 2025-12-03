@@ -1,6 +1,7 @@
 #r "nuget:Unquote"
 
 open Swensen.Unquote
+open System.IO
 
 type Rotation = | Left | Right
 type Instruction = { Direction: Rotation; Steps: int }
@@ -54,3 +55,15 @@ test <@
         |> countZeros
         )
     @>
+
+let realData =
+    File.ReadAllLines(__SOURCE_DIRECTORY__ + "/input.txt")
+    |> Array.toList
+
+let realPassword =
+    realData
+    |> List.map parseInstruction 
+    |> stoppingPoints 50
+    |> countZeros
+
+printfn "The real password is %d" realPassword
