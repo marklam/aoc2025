@@ -68,30 +68,40 @@ let realPassword =
 
 printfn "The real password is %d" realPassword
 
+let posMod x y =
+    let modulo = x % y
+    if modulo < 0 then modulo + y else modulo
+
+type ZeroCrossing = { Zeros : int; NewPosition : int }
+
 let applyInstruction2 (position: int) instruction =
     let increment =
         match instruction.Direction with
-        | Left -> - instruction.Steps
-        | Right -> instruction.Steps
-    let newPosition = position + increment
+        | Left -> -1
+        | Right -> 1
 
-    let modulo = newPosition % dialSize
-    if newPosition = 0 then 
-        {| NewPosition = modulo; Zeros = 1 |}
-    elif newPosition < 0 then 
-        if position = 0 then
-            {| NewPosition = modulo + dialSize; Zeros = abs (newPosition / dialSize) |}
-        else
-            {| NewPosition = modulo + dialSize; Zeros = 1 + abs (newPosition / dialSize) |}
-    else 
-        {| NewPosition = modulo; Zeros = newPosition / dialSize |}
+    let mutable newPosition = position
+    let mutable zeros = 0
+    for i = 1 to instruction.Steps do
+        match newPosition + increment with
+        | -1 -> 
+            newPosition <- dialSize - 1
+        | x when x = dialSize -> 
+            newPosition <- 0
+        | x -> 
+            newPosition <- x
 
-let countZeroCrossings (applications : {| NewPosition : int; Zeros : int|} list) =
+        if newPosition = 0 then
+            zeros <- zeros + 1
+
+    { Zeros = zeros; NewPosition = newPosition }
+
+let countZeroCrossings applications =
     applications
     |> List.sumBy (fun x -> x.Zeros)
 
 let applyInstructions2 start instructions =
-    ( {| NewPosition = start; Zeros = 0 |}, instructions)
+    ( { NewPosition = start; Zeros = 0 }, instructions)
     ||> List.scan (fun acc instr -> applyInstruction2 acc.NewPosition instr)
 
 test <@ 
