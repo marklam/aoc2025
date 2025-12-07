@@ -68,10 +68,6 @@ let realPassword =
 
 printfn "The real password is %d" realPassword
 
-let posMod x y =
-    let modulo = x % y
-    if modulo < 0 then modulo + y else modulo
-
 type ZeroCrossing = { Zeros : int; NewPosition : int }
 
 let applyInstruction2 (position: int) instruction =
