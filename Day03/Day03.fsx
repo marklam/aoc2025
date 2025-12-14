@@ -3,24 +3,25 @@
 open System
 open Swensen.Unquote
 
-let joltage (bank : string) =
-    let mutable maxFirstDigit = -1
-    let mutable maxSecondDigit = -1
-    let mutable pos = 0
+let joltage requiredDigits (bank : string) =
     let x = bank.AsSpan()
-    
-    for i = 0 to x.Length - 2 do
-        let c = int (x[i] - '0')
-        if c > maxFirstDigit then 
-            pos <- i
-            maxFirstDigit <- c
-
-    for i = pos + 1 to x.Length - 1 do
-        let c = int (x[i] - '0')
-        if c > maxSecondDigit then 
-            maxSecondDigit <- c
-
-    maxFirstDigit * 10 + maxSecondDigit
+    //let mutable remainingDigits = requiredDigits
+    let mutable skipsLeft = x.Length - requiredDigits
+    let mutable digitsLeft = requiredDigits
+    let resultDigits = Array.zeroCreate requiredDigits
+    let mutable nextDigitStartPoint = 0
+    for i = 0 to requiredDigits-1 do
+        let mutable maxNextDigit = '/' // just below 0
+        let mutable maxNextDigitPos = -1
+        for j = nextDigitStartPoint to nextDigitStartPoint + skipsLeft do
+            if x[j] > maxNextDigit then
+                maxNextDigit <- x[j]
+                maxNextDigitPos <- j
+        let skips = maxNextDigitPos - nextDigitStartPoint
+        skipsLeft <- skipsLeft - skips
+        nextDigitStartPoint <- nextDigitStartPoint + skips + 1
+        resultDigits[i] <- maxNextDigit
+    int64 (String resultDigits)
 
 let testData = 
     [|
@@ -32,9 +33,9 @@ let testData =
 
 test <@
 
-    [|98; 89; 78; 92|] = (
+    [|98L; 89L; 78L; 92L|] = (
         testData
-        |> Array.map joltage
+        |> Array.map (joltage 2)
         )
     @>
 
@@ -43,5 +44,16 @@ let realData =
 
 let realResult =
     realData
-    |> Array.map joltage
+    |> Array.map (joltage 2)
     |> Array.sum
+
+printfn "Result = %d" realResult
+
+test <@ 17107L = realResult @>
+
+let realResult2 =
+    realData
+    |> Array.map (joltage 12)
+    |> Array.sum
+
+printfn "Result2 = %d" realResult2
