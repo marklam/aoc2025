@@ -3,8 +3,8 @@
 open System
 open Swensen.Unquote
 
-type Range = { First: int; Last: int }
-type IngredientDb = { Fresh : Range list; Avaliable : int list }
+type Range = { First: int64; Last: int64 }
+type IngredientDb = { Fresh : Range list; Avaliable : int64 list }
 
 let parse (text : string[]) : IngredientDb =
     let separatorIndex = text |> Array.findIndex (fun line -> String.IsNullOrWhiteSpace line)
@@ -15,15 +15,15 @@ let parse (text : string[]) : IngredientDb =
         ranges
         |> Array.map (fun line ->
             let parts = line.Split('-')
-            { First = int parts[0]; Last = int parts[1] })
+            { First = int64 parts[0]; Last = int64 parts[1] })
         |> Array.toList
 
     let avaliableIngredients =
-        ids |> Array.map int |> Array.toList
+        ids |> Array.map int64 |> Array.toList
 
     { Fresh = freshRanges; Avaliable = avaliableIngredients }
 
-let freshIngredients (db : IngredientDb) : int list =
+let freshIngredients (db : IngredientDb) =
     let isFresh id =
         db.Fresh
         |> List.exists (fun range -> id >= range.First && id <= range.Last)
@@ -49,3 +49,15 @@ let testData =
 test <@ 
     (testData |> parse |> freshIngredients) = [5; 11; 17]
    @>
+
+let realData =
+    System.IO.File.ReadAllLines(__SOURCE_DIRECTORY__ + "/input.txt")
+
+let realResult =
+    realData
+    |> parse
+    |> freshIngredients
+    |> List.length
+
+printfn "Result = %d" realResult
+
