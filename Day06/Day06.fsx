@@ -59,3 +59,14 @@ test <@
 test <@
     (testData |> columns |> transpose |> doHomework) = 4277556UL
     @>
+
+let realData =
+    System.IO.File.ReadAllLines(__SOURCE_DIRECTORY__ + "/input.txt")
+
+let realResult =
+    realData
+    |> columns
+    |> transpose
+    |> doHomework
+
+printfn "Result = %d" realResult
