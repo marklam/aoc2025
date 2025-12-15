@@ -138,3 +138,37 @@ let realResult =
     |> Array.sumBy (fun (i, j) -> if summed[i][j] < 5 then 1 else 0)
 
 printfn "Result = %d" realResult
+
+let keepRemoving map =
+    let rollData =
+        rolls map
+
+    let rec removalLoop acc =
+        let summed =
+            rollData
+            |> sums 1
+
+        let locations =
+            locationsOf1s rollData 
+    
+        let removalLocations =
+            locations
+            |> Array.filter (fun (i, j) -> summed[i][j] < 5)
+
+
+        if Array.isEmpty removalLocations then
+            acc
+        else
+            for (i, j) in removalLocations do
+                rollData[i][j] <- 0
+
+            removalLoop (acc + removalLocations.Length)
+
+    removalLoop 0
+
+test <@ keepRemoving testData = 43 @>
+
+let result2 =
+    keepRemoving realData
+
+printfn "Result2 = %d" result2
