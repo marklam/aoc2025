@@ -70,3 +70,80 @@ let realResult =
     |> doHomework
 
 printfn "Result = %d" realResult
+
+let columns2 (text : string[]) =
+    let rec split acc (text : string[]) offset =
+        let befores = 
+            Array.init offset (fun i -> 
+                text 
+                |> Array.choose (fun line -> 
+                    let ch = line.[i]
+                    if ch = ' ' then 
+                        None 
+                    else 
+                        Some ch)
+                |> String
+            )
+        if text[0].Length = offset then
+            (befores :: acc)
+        elif text |> Array.forall (fun line -> line[offset] = ' ') then
+            let afters = 
+                text 
+                |> Array.map (fun line -> line.[offset+1..])
+            split (befores :: acc) afters 0
+        else
+            split acc text (offset + 1)
+
+    split [] text 0
+    |> List.rev
+
+let calcs2 (columns : string[] list) =
+    columns
+    |> List.map (fun cols ->
+        let opChar = cols[0] |> Seq.last
+        let op =
+            match opChar with
+            | '+' -> Add
+            | '*' -> Multiply
+            | _ -> failwith "Unknown operation"
+        let values =
+            cols
+            |> Array.map (fun col ->
+                col.TrimEnd [|'+'; '*'|]
+                |> int
+            )
+        { Op = op; Values = values }
+    )
+    |> List.toArray
+
+test <@
+    (testData |> columns2) =
+        [
+            [| "1*"; "24"; "356" |];
+            [| "369+"; "248"; "8" |];
+            [| "32*"; "581"; "175" |];
+            [| "623+"; "431"; "4" |];
+        ]
+        @>
+
+test <@
+    (testData |> columns2 |> calcs2) =
+        [|
+            { Op = Multiply; Values = [|1; 24; 356|] }
+            { Op = Add; Values = [|369; 248; 8|] }
+            { Op = Multiply; Values = [|32; 581; 175|] }
+            { Op = Add; Values = [|623; 431; 4|] }
+        |]
+    @>
+
+test <@
+    (testData |> columns2 |> calcs2 |> doHomework) = 3263827UL
+    @>
+
+let realResult2 =
+    realData
+    |> columns2
+    |> calcs2
+    |> doHomework
+
+printfn "Result2 = %d" realResult2
