@@ -61,3 +61,32 @@ let realResult =
 
 printfn "Result = %d" realResult
 
+let overlaps (range1 : Range) (range2 : Range) =
+    not (range1.Last < range2.First || range1.First > range2.Last)
+
+let merge (range1 : Range) (range2 : Range) =
+    { First = min range1.First range2.First; Last = max range1.Last range2.Last }
+
+let rec mergeRanges (ranges : Range list) (range : Range) =
+    let overlapping =
+        ranges |> List.tryFind (overlaps range)
+    
+    match overlapping with
+    | Some overlapping ->
+        let rest = ranges |> List.except [overlapping]
+        let merged = merge range overlapping
+        mergeRanges rest merged
+    | None -> range :: ranges
+
+let itemTotal ranges =
+    ranges
+    |> List.sumBy (fun range -> range.Last - range.First + 1L)
+
+let result2 =
+    realData
+    |> parse
+    |> _.Fresh 
+    |> List.fold mergeRanges []
+    |> itemTotal
+
+printfn "Result2 = %d" result2
