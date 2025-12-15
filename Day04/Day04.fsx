@@ -49,6 +49,19 @@ let sums padding (rolls : int[][]) =
     let finalSums = verticalSums height padding horizontalSums
     finalSums
 
+let locationsOf1s rollData =
+    rollData 
+    |> Array.mapi (fun i row ->
+        row
+        |> Array.mapi (fun j x -> 
+            if x = 1 then
+                Some (i, j)
+            else
+                None)
+    )
+    |> Array.concat
+    |> Array.choose id
+
 let testData = 
     [|
         "..@@.@@@@."
@@ -99,22 +112,29 @@ let testResult  =
         |> sums 1
 
     let testLocations =
-        rollData 
-        |> Array.mapi (fun i row ->
-            row
-            |> Array.mapi (fun j x -> 
-                if x = 1 then
-                    Some (i, j)
-                else
-                    None)
-        )
-        |> Array.concat
-        |> Array.choose id
-
-    printfn "SUms %A" summed
+        locationsOf1s rollData
 
     testLocations
     |> Array.sumBy (fun (i, j) -> if summed[i][j] < 5 then 1 else 0)
 
 test <@ testResult = 13 @>
 
+let realData =
+    System.IO.File.ReadAllLines(__SOURCE_DIRECTORY__ + "/input.txt")
+
+let realResult =
+    let rollData =
+        realData
+        |> rolls
+    
+    let summed =
+        rollData
+        |> sums 1
+
+    let realLocations =
+        locationsOf1s rollData 
+
+    realLocations
+    |> Array.sumBy (fun (i, j) -> if summed[i][j] < 5 then 1 else 0)
+
+printfn "Result = %d" realResult
