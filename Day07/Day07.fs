@@ -1,8 +1,7 @@
-#r "nuget:Unquote"
-
 open System
 open System.IO
 open Swensen.Unquote
+open System.Collections.Generic
 
 type Cell = | Entry | Space | Splitter
 
@@ -77,3 +76,43 @@ let realData =
 
 let result = realData |> runSimulation
 printfn "Result: %d" result.SplitCount
+
+type [<Struct>] Timeline = { XPosition : int; YPosition : int}
+
+
+let runQuantumSimulation (lines : string[]) =
+    let lines = lines |> Array.map parse
+    let initialPosition = lines[0] |> Array.findIndex (fun cell -> cell = Entry)
+    let initialTimeline = { XPosition = initialPosition; YPosition = 1}
+
+    let walkedCache = Dictionary()
+
+    let rec runQuantumSimulationInner currentTimeline =
+        match walkedCache.TryGetValue(currentTimeline) with
+        | true, paths -> paths
+        | false, _ ->
+            let paths =
+                if currentTimeline.YPosition = lines.Length then
+                    1L
+                else
+                    let line = lines[currentTimeline.YPosition]
+                    match line[currentTimeline.XPosition] with
+                    | Entry ->
+                        failwith "Should not happen"
+                    | Space ->
+                        runQuantumSimulationInner { currentTimeline with YPosition = currentTimeline.YPosition+1 }
+                    | Splitter ->
+                        let leftTimeline = { XPosition = currentTimeline.XPosition - 1; YPosition = currentTimeline.YPosition + 1 }
+                        let rightTimeline = { XPosition = currentTimeline.XPosition + 1; YPosition = currentTimeline.YPosition + 1 }
+                        runQuantumSimulationInner leftTimeline + runQuantumSimulationInner rightTimeline
+            walkedCache.[currentTimeline] <- paths
+            paths
+
+    runQuantumSimulationInner initialTimeline
+
+test <@
+    (testData |> runQuantumSimulation) = 40
+    @>
+
+let realQuantumResult = realData |> runQuantumSimulation
+printfn "Quantum Result: %d" realQuantumResult
