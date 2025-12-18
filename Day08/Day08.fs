@@ -4,7 +4,8 @@ open Swensen.Unquote
 open System.Collections.Generic
 
 type Location = { X : int; Y : int; Z : int }
-type BoxDistance = { From : Location; To : Location; Distance : float }
+type Link = { From : Location; To : Location }
+type BoxDistance = { Link : Link; Distance : float }
 
 let parse (lines : string[]) : Location[] =
     lines
@@ -24,11 +25,14 @@ let measure locations =
             let dy = float (loc1.Y - loc2.Y)
             let dz = float (loc1.Z - loc2.Z)
             let dist = sqrt (dx * dx + dy * dy + dz * dz)
-            distances.Add({ From = loc1; To = loc2; Distance = dist })
+            distances.Add({ Link = { From = loc1; To = loc2 }; Distance = dist })
     distances.ToArray()
     |> Array.sortBy (fun bd -> bd.Distance)
     
-let join location1 location2 connections =
+let join link connections =
+    let location1 = link.From
+    let location2 = link.To
+
     let circuit1 = connections |> Map.tryFind location1
     let circuit2 = connections |> Map.tryFind location2
 
@@ -51,7 +55,7 @@ let join location1 location2 connections =
 let uniqueValues connections =
     connections
     |> Map.values
-    |> Seq.distinct
+    |> Seq.distinctBy Set.minElement // Enough to identify unique sets
 
 let result connections =
     uniqueValues connections
@@ -60,7 +64,7 @@ let result connections =
     |> Seq.take 3
     |> Seq.fold (*) 1
 
-let testData = 
+let testLocations = 
     [|
         "162,817,812"
         "57,618,57"
@@ -84,29 +88,32 @@ let testData =
         "425,690,689"
     |]
     |> parse
+
+let testData =
+    testLocations
     |> measure
 
 test <@
-    (testData[0] |> fun l -> l.From,l.To) = ({X = 162; Y = 817; Z = 812}, { X = 425; Y = 690; Z = 689 })
+    (testData[0].Link) = { From = {X = 162; Y = 817; Z = 812}; To = { X = 425; Y = 690; Z = 689 }}
     @>
 
 test <@
-    (testData[1] |> fun l -> l.From, l.To) = ({ X = 162; Y = 817; Z = 812}, { X = 431; Y = 825; Z = 988 })
+    (testData[1].Link) = { From = { X = 162; Y = 817; Z = 812}; To = { X = 431; Y = 825; Z = 988 }}
     @>
 
 test <@
-    (testData[2] |> fun l -> l.From, l.To) = ({ X = 906; Y = 360; Z = 560 }, { X = 805; Y = 96; Z = 715 })
+    (testData[2].Link) = { From = { X = 906; Y = 360; Z = 560 }; To = { X = 805; Y = 96; Z = 715 }}
     @>
 
 test <@
-    (testData[0] |> fun l -> join l.From l.To Map.empty |> uniqueValues |> List.ofSeq) =
+    (testData[0].Link |> fun l -> join l Map.empty |> uniqueValues |> List.ofSeq) =
         [ Set.ofList [ { X = 162; Y = 817; Z = 812 }; { X = 425; Y = 690; Z = 689 } ] ]
     @>
 
 test <@
     (testData 
         |> Array.take 2 
-        |> Array.fold (fun conns l -> join l.From l.To conns) Map.empty 
+        |> Array.fold (fun conns l -> join l.Link conns) Map.empty 
         |> uniqueValues 
         |> List.ofSeq) =
         [ Set.ofList [ { X = 162; Y = 817; Z = 812 }; { X = 425; Y = 690; Z = 689 }; { X = 431; Y = 825; Z = 988 } ] ]
@@ -115,7 +122,7 @@ test <@
 test <@
     (testData 
         |> Array.take 3
-        |> Array.fold (fun conns l -> join l.From l.To conns) Map.empty 
+        |> Array.fold (fun conns l -> join l.Link conns) Map.empty 
         |> uniqueValues 
         |> List.ofSeq) =
         [ 
@@ -127,7 +134,7 @@ test <@
 test <@
     (testData 
         |> Array.take 4
-        |> Array.fold (fun conns l -> join l.From l.To conns) Map.empty 
+        |> Array.fold (fun conns l -> join l.Link conns) Map.empty 
         |> uniqueValues 
         |> List.ofSeq) =
         [ 
@@ -139,7 +146,7 @@ test <@
 test <@
     (testData 
         |> Array.take 10 
-        |> Array.fold (fun connections dist -> join dist.From dist.To connections) Map.empty 
+        |> Array.fold (fun connections dist -> join dist.Link connections) Map.empty 
         |> uniqueValues 
         |> Seq.length) = 11 - 7
     @>
@@ -147,19 +154,49 @@ test <@
 test <@
     (testData 
         |> Array.take 10 
-        |> Array.fold (fun connections dist -> join dist.From dist.To connections ) Map.empty 
+        |> Array.fold (fun connections dist -> join dist.Link connections ) Map.empty 
         |> result) = 40
     @>
 
-let realData =
+let realLocations =
     File.ReadAllLines(__SOURCE_DIRECTORY__ + "/input.txt")
     |> parse
+
+let realData =
+    realLocations
     |> measure
 
 let realResult =
     realData
     |> Array.take 1000
-    |> Array.fold (fun connections dist -> join dist.From dist.To connections) Map.empty
+    |> Array.fold (fun connections dist -> join dist.Link connections) Map.empty
     |> result
 
 printfn "Result : %d" realResult
+
+let findLast locations distances =
+    let n = Array.length locations
+    let isDone connections =
+        connections |> Map.values |> Seq.tryHead |> Option.map Set.count = Some n 
+
+    Seq.scan (fun (_,connections) dist ->
+        let newConns = join dist.Link connections
+        (dist.Link, newConns)
+    ) ({From={X=0;Y=0;Z=0};To={X=0;Y=0;Z=0}},Map.empty) distances
+    |> Seq.pick (
+        fun (link, connections) ->
+            if isDone connections then
+                Some link
+            else
+                None
+        )
+
+test <@
+    findLast testLocations testData = { From = { X = 216; Y = 146; Z = 977}; To = { X = 117; Y = 168; Z = 530 } }
+    @>
+
+let realResult2 =
+    let link = findLast realLocations realData
+    (int64 link.From.X) * (int64 link.To.X)
+
+printfn "Result 2: %d" realResult2
