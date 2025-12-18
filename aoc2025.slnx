@@ -1,21 +1,22 @@
 <Solution>
-  <Folder Name="/Day01/" >
+  <Folder Name="/Day01/">
     <File Path="Day01/Day01.fsx" />
   </Folder>
-  <Folder Name="/Day02/" >
+  <Folder Name="/Day02/">
     <File Path="Day02/Day02.fsx" />
   </Folder>
-  <Folder Name="/Day03/" >
+  <Folder Name="/Day03/">
     <File Path="Day03/Day03.fsx" />
   </Folder>
-  <Folder Name="/Day04/" >
+  <Folder Name="/Day04/">
     <File Path="Day04/Day04.fsx" />
   </Folder>
-  <Folder Name="/Day05/" >
+  <Folder Name="/Day05/">
     <File Path="Day05/Day05.fsx" />
   </Folder>
-  <Folder Name="/Day06/" >
+  <Folder Name="/Day06/">
     <File Path="Day06/Day06.fsx" />
   </Folder>
   <Project Path="Day07/Day07.fsproj" />
+  <Project Path="Day08/Day08.fsproj" Id="24c4119a-0ed6-4108-b3b5-b8c3405e6801" />
 </Solution>
